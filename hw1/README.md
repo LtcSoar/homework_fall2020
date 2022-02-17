@@ -18,6 +18,7 @@ Fill in sections marked with `TODO`. In particular, see
 
 Look for sections maked with `HW1` to see how the edits you make will be used.
 Some other files that you may find relevant
+
  - [scripts/run_hw1.py](cs285/scripts/run_hw1.py) (if running locally) or [scripts/run_hw1.ipynb](cs285/scripts/run_hw1.ipynb) (if running on Colab)
  - [agents/bc_agent.py](cs285/agents/bc_agent.py)
 

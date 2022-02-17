@@ -1,4 +1,5 @@
 from cs285.infrastructure.utils import *
+import numpy
 
 
 class ReplayBuffer(object):
@@ -11,11 +12,12 @@ class ReplayBuffer(object):
         self.paths = []
 
         # store (concatenated) component arrays from each rollout
-        self.obs = None
-        self.acs = None
-        self.rews = None
-        self.next_obs = None
-        self.terminals = None
+        # by convention,we should always use type innotation
+        self.obs : numpy.ndarray = None
+        self.acs : numpy.ndarray = None
+        self.rews : numpy.ndarray = None
+        self.next_obs : numpy.ndarray = None
+        self.terminals :numpy.ndarray = None
 
     def __len__(self):
         if self.obs:
@@ -76,8 +78,9 @@ class ReplayBuffer(object):
         ## HINT 1: use np.random.permutation to sample random indices
         ## HINT 2: return corresponding data points from each array (i.e., not different indices from each array)
         ## HINT 3: look at the sample_recent_data function below
-
-        return TODO, TODO, TODO, TODO, TODO
+        indices = np.random.permutation(self.obs.shape[0])[:batch_size]
+        
+        return  self.obs[indices], self.acs[indices],self.rews[indices], self.next_obs[indices],self.terminals[indices]
 
     def sample_recent_data(self, batch_size=1):
         return (

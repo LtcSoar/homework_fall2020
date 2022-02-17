@@ -1,13 +1,18 @@
+import imp
+from lib2to3.pytree import Base
 import numpy as np
 import time
+import gym
+from cs285.policies.base_policy import BasePolicy
 
 ############################################
+#parameter type annotation is induced by py3.6
 ############################################
 
-def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('rgb_array')):
+def sample_trajectory(env:gym.Env, policy:BasePolicy, max_path_length, render=False, render_mode=('rgb_array')):
 
     # initialize env for the beginning of a new rollout
-    ob = TODO # HINT: should be the output of resetting the env
+    ob = env.reset() # HINT: should be the output of resetting the env
 
     # init vars
     obs, acs, rewards, next_obs, terminals, image_obs = [], [], [], [], [], []
@@ -27,7 +32,7 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # use the most recent ob to decide what to do
         obs.append(ob)
-        ac = TODO # HINT: query the policy's get_action function
+        ac = policy.get_action(ob) # HINT: query the policy's get_action function
         ac = ac[0]
         acs.append(ac)
 
@@ -41,7 +46,7 @@ def sample_trajectory(env, policy, max_path_length, render=False, render_mode=('
 
         # TODO end the rollout if the rollout ended
         # HINT: rollout can end due to done, or due to max_path_length
-        rollout_done = TODO # HINT: this is either 0 or 1
+        rollout_done = 1 if done or steps >= max_path_length else 0 # HINT: this is either 0 or 1
         terminals.append(rollout_done)
 
         if rollout_done:
@@ -59,9 +64,12 @@ def sample_trajectories(env, policy, min_timesteps_per_batch, max_path_length, r
     """
     timesteps_this_batch = 0
     paths = []
+    # kind of confused here, is it neccessary to keep timesteps equal to min_timesteps_per_batch?
+    # according to the return of timesteps_this_batch，it should not be neccessary
     while timesteps_this_batch < min_timesteps_per_batch:
-
-        TODO
+        new_path = sample_trajectory(env,policy,max_path_length,render,render_mode)
+        paths.append(new_path)
+        timesteps_this_batch += get_pathlength(new_path)
 
     return paths, timesteps_this_batch
 
@@ -74,7 +82,8 @@ def sample_n_trajectories(env, policy, ntraj, max_path_length, render=False, ren
     """
     paths = []
 
-    TODO
+    for i in range(ntraj):
+        paths.append(sample_trajectory(env,policy,max_path_length,render,render_mode))
 
     return paths
 

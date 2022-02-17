@@ -1,2 +1,6 @@
+.gitignore
 *.pyc
 data/
+.vscode/
+.DS_Store
+cs285.egg-info
