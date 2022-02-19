@@ -1,6 +1,8 @@
 import abc
+from email.mime import base
 import itertools
-from torch import nn
+from cv2 import norm
+from torch import Tensor, nn
 from torch.nn import functional as F
 from torch import optim
 
@@ -10,6 +12,7 @@ from torch import distributions
 
 from cs285.infrastructure import pytorch_util as ptu
 from cs285.policies.base_policy import BasePolicy
+from cs285.infrastructure.utils import normalize
 
 
 class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
@@ -85,9 +88,27 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     ##################################
 
     # query the policy with observation(s) to get selected action(s)
-    def get_action(self, obs: np.ndarray) -> np.ndarray:
-        # TODO: get this from hw1
-        return action
+    def get_action(self,obs:np.ndarray) -> torch.FloatTensor:
+        if len(obs.shape) > 1:
+            observation = obs
+        else:
+            observation = obs[None]
+
+        # TODO return the action that the policy prescribes
+        # raise NotImplementedError
+        # return ptu.to_numpy(self.forward(ptu.from_numpy(observation)))
+        # 一般来说还是应当对离散形式的和连续形式的做一下区分
+        # 当然我们也可以看到，在简单情形（ant模型）下即使是两者采用一样的形式（deterministic），也可以有不错的效果
+        # 那么我们采用一般认为的形式会有什么样的效果呢？
+        # pred = self.forward(ptu.from_numpy(observation))
+        # if self.discrete:
+        #     ac = torch.argmax(pred)
+        # else:
+        #     pred : distributions.normal.Normal
+        #     ac = pred.rsample()
+        # return ac
+        return ptu.to_numpy(self.forward(ptu.from_numpy(observation)).sample())
+        
 
     # update/train this policy
     def update(self, observations, actions, **kwargs):
@@ -100,7 +121,17 @@ class MLPPolicy(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
     # `torch.distributions.Distribution` object. It's up to you!
     def forward(self, observation: torch.FloatTensor):
         # TODO: get this from hw1
-        return action_distribution
+        # raise NotImplementedError
+        if self.discrete:
+            # print("is discrete")
+            # it is better to specify logits;logits可以是任意的real value
+            return distributions.Categorical(logits = self.logits_na(observation))
+        else:
+            # 注意由于sigma必然是正的，所以我们选用的是logstd，一定要记得加exp哦
+            # print("is continous")
+            # return distributions.normal.Normal(self.mean_net(observation),torch.exp(self.logstd))
+            # 个人感觉exp应该是tensor类自带函数
+            return distributions.MultivariateNormal(loc = self.mean_net(observation),covariance_matrix=torch.diag(self.logstd.exp()))
 
 
 #####################################################
@@ -124,21 +155,27 @@ class MLPPolicyPG(MLPPolicy):
         # HINT2: you will want to use the `log_prob` method on the distribution returned
             # by the `forward` method
         # HINT3: don't forget that `optimizer.step()` MINIMIZES a loss
-
-        loss = TODO
+        
+        log_pi = self.forward(observations).log_prob(actions)
+        # 
+        loss = -torch.mean(log_pi*advantages)
+        
 
         # TODO: optimize `loss` using `self.optimizer`
         # HINT: remember to `zero_grad` first
-        TODO
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        
 
         if self.nn_baseline:
             ## TODO: normalize the q_values to have a mean of zero and a standard deviation of one
             ## HINT: there is a `normalize` function in `infrastructure.utils`
-            targets = TODO
+            targets = normalize(q_values,np.mean(q_values),np.std(q_values))
             targets = ptu.from_numpy(targets)
 
             ## TODO: use the `forward` method of `self.baseline` to get baseline predictions
-            baseline_predictions = TODO
+            baseline_predictions : Tensor = self.baseline.forward(observations).squeeze()
             
             ## avoid any subtle broadcasting bugs that can arise when dealing with arrays of shape
             ## [ N ] versus shape [ N x 1 ]
@@ -147,11 +184,16 @@ class MLPPolicyPG(MLPPolicy):
             
             # TODO: compute the loss that should be optimized for training the baseline MLP (`self.baseline`)
             # HINT: use `F.mse_loss`
-            baseline_loss = TODO
+            # 不加forward是做重载，vscode不认识的
+            baseline_loss = self.baseline_loss.forward(targets,baseline_predictions)
 
             # TODO: optimize `baseline_loss` using `self.baseline_optimizer`
             # HINT: remember to `zero_grad` first
-            TODO
+            self.baseline_optimizer.zero_grad()
+            baseline_loss.backward()
+            self.baseline_optimizer.step()
+            
+            
 
         train_log = {
             'Training Loss': ptu.to_numpy(loss),
