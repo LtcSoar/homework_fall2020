@@ -1,5 +1,6 @@
+import imp
 import numpy as np
-
+from cs285.critics.dqn_critic import DQNCritic
 
 class ArgMaxPolicy(object):
 
@@ -14,6 +15,7 @@ class ArgMaxPolicy(object):
         
         ## TODO return the action that maxinmizes the Q-value 
         # at the current observation as the output
-        actions = TODO
-
-        return action.squeeze()
+        self.critic : DQNCritic
+        # 注意其维度应该是N*n，其中N为obs的个数，n为action space的维度
+        actions = np.argmax(self.critic.qa_values(obs),axis=-1)
+        return actions.squeeze()

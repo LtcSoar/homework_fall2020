@@ -31,8 +31,12 @@ if __name__ == '__main__':
     # logdir.append('data/q1_lb_rtg_dsa_CartPole-v0_19-02-2022_19-26-39/events*')
     # logdir.append('data/q1_lb_rtg_na_CartPole-v0_19-02-2022_19-27-07/events*')
     # colors = ['skyblue','orange','red']
-    logdir = 'data/q1_sb_no_rtg_dsa_CartPole-v0_19-02-2022_16-40-57/events*'
-    # eventfile = glob.glob(logdir)[0]
+    logdir = 'data/q3_b40000_r0.005_LunarLanderContinuous-v2_19-02-2022_20-43-13/events*'
+    eventfile = glob.glob(logdir)[0]
+    x, y = get_section_results(eventfile)
+    iter = np.arange(100)
+    plt.plot(iter,y,color='skyblue')
+    plt.show()
     # X = []
     # Y = []
     # iter = np.arange(100)

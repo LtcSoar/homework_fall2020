@@ -11,3 +11,7 @@
 #### correction
 
 之前参考的https://github.com/vincentkslim/cs285_homework_fall2020里面，我发现一个错误：`targets = normalize(q_values, np.mean(q_values), np.mean(q_values))`。对baseline做更新的时候，我们是有做normalize的（baseline netword的输出是被训练为normalize之后的），而这里直接不小心以mean为std，对效果有所影响。
+
+#### 耗时
+
+如作业描述中所说，前两个实验都很快，第三个（用cpu，8259u）要1~2h。第四个没跑。

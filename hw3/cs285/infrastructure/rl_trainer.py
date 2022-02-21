@@ -98,6 +98,7 @@ class RL_Trainer(object):
         ac_dim = self.env.action_space.n if discrete else self.env.action_space.shape[0]
         self.params['agent_params']['ac_dim'] = ac_dim
         self.params['agent_params']['ob_dim'] = ob_dim
+        print(f"ob_dim is {ob_dim} ")
 
         # simulation timestep, will be used for video saving
         if 'model' in dir(self.env):
@@ -149,7 +150,7 @@ class RL_Trainer(object):
             # decide if metrics should be logged
             if self.params['scalar_log_freq'] == -1:
                 self.logmetrics = False
-            elif itr % self.params['scalar_log_freq'] == 0:
+            elif (itr+1) % self.params['scalar_log_freq'] == 0:
                 self.logmetrics = True
             else:
                 self.logmetrics = False
@@ -211,11 +212,41 @@ class RL_Trainer(object):
             train_video_paths: paths which also contain videos for visualization purposes
         """
         # TODO: get this from Piazza
+        # do not matter here since initial expertdata never used
+        if itr == 0 and initial_expertdata != None:
+            with open(initial_expertdata,'rb') as f:
+                data = pickle.loads(f.read())
+            return data,0,None
+        print("\nCollecting data to be used for training...")
+        paths, envsteps_this_batch = utils.sample_trajectories(self.env,collect_policy,num_transitions_to_sample,self.params['ep_len'])
 
+        # collect more rollouts with the same policy, to be saved as videos in tensorboard
+        # note: here, we collect MAX_NVIDEO rollouts, each of length MAX_VIDEO_LEN
+        train_video_paths = None
+        if self.logvideo:
+            print('\nCollecting train rollouts to be used for saving videos...')
+            ## TODO look in utils and implement sample_n_trajectories
+            train_video_paths = utils.sample_n_trajectories(self.env, collect_policy, MAX_NVIDEO, MAX_VIDEO_LEN, True)
         return paths, envsteps_this_batch, train_video_paths
 
     def train_agent(self):
         # TODO: get this from Piazza
+        # print('\nTraining agent using sampled data from replay buffer...')
+        all_logs = []
+        for train_step in range(self.params['num_agent_train_steps_per_iter']):
+
+            # TODO sample some data from the data buffer
+            # HINT1: use the agent's sample function
+            # HINT2: how much data = self.params['train_batch_size']
+            ob_batch, ac_batch, re_batch, next_ob_batch, terminal_batch = self.agent.sample(self.params['train_batch_size'])
+
+            # TODO use the sampled data to train an agent
+            # HINT: use the agent's train function
+            # HINT: keep the agent's training log for debugging
+            # print(f"batch_size,ob_batch, re_batch :{self.params['train_batch_size'],len(ob_batch),len(re_batch)}")
+            train_log = self.agent.train(ob_batch,ac_batch,re_batch,next_ob_batch,terminal_batch)
+            all_logs.append(train_log)
+        return all_logs
 
     ####################################
     ####################################

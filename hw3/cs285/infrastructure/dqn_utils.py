@@ -12,6 +12,7 @@ from cs285.infrastructure.atari_wrappers import wrap_deepmind
 from gym.envs.registration import register
 
 import torch
+import tensorflow as tf
 
 
 class Flatten(torch.nn.Module):
